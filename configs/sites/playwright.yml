@@ -1,0 +1,9 @@
+name: playwright
+headers:
+  User-Agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+selectors:
+  wait_for: "img"
+  visible_img_selector: "img"
+min_image_width: 300
+min_image_height: 300
+playwright_timeout: 30000

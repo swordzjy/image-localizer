@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "image-localizer"
+version = "0.1.0"
+description = "Scrape product images from a URL, extract text, translate, and edit images."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Claude Code" }]
+license = { text = "MIT" }
+keywords = ["image", "localization", "translation", "ocr", "scraping"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "typer>=0.12.0",
+    "pydantic>=2.0",
+    "Pillow>=10.0",
+    "aiohttp>=3.9",
+    "beautifulsoup4>=4.12",
+    "pyyaml>=6.0",
+    "anthropic>=0.28",
+    "openai>=1.30",
+    "opencv-python>=4.9",
+]
+
+[project.optional-dependencies]
+easyocr = ["easyocr>=1.7"]
+tesseract = ["pytesseract>=0.3.10"]
+playwright = ["playwright>=1.40"]
+all = ["easyocr>=1.7", "pytesseract>=0.3.10", "playwright>=1.40"]
+
+[project.scripts]
+image-localizer = "image_localizer.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+image_localizer = ["../configs/sites/*.yml"]

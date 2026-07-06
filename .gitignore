@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.env
+
+# macOS
+.DS_Store
+
+# IDE / local settings
+.claude/settings.local.json
+
+# Output directories
+out/
+out1/
+output/
+ouput/
+ouput1/
+
+# Scratch / test data
+scratchpad/
+MC100S/
+
+# Secrets
+configs/*.json
