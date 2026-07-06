@@ -4,8 +4,10 @@ from image_localizer.image_editor import (
     _available_width,
     _cluster_lines,
     _detect_alignments,
+    _line_height,
     _merge_overlapping_blocks,
     _original_font_size,
+    _rendered_block_height,
     _side_limits,
     _text_stroke_mask,
     _wrap_text,
@@ -178,3 +180,53 @@ def test_text_stroke_mask_dilate_stays_inside_bbox():
     assert xs.max() < 80
     assert ys.min() >= 40
     assert ys.max() < 60
+
+
+def test_edit_image_shrinks_to_avoid_vertical_overlap(tmp_path):
+    # Two lines whose original bboxes leave only a small vertical gap.
+    # A longer translation must be shrunk so the rendered glyphs do not visually
+    # overlap the next line.
+    from PIL import Image
+
+    src = tmp_path / "src.png"
+    Image.new("RGB", (600, 200), (155, 193, 243)).save(src)
+
+    blocks = [
+        TextBlock(
+            text="Short line",
+            x=50,
+            y=40,
+            width=120,
+            height=30,
+            translated="Une traduction beaucoup plus longue",
+        ),
+        TextBlock(
+            text="Next line",
+            x=50,
+            y=75,
+            width=100,
+            height=30,
+            translated="Ligne suivante",
+        ),
+    ]
+    out = tmp_path / "out.png"
+    edit_image(src, blocks, out)
+
+    result = Image.open(out)
+    arr = np.array(result)
+    # Text is light on blue; count bright pixels in the gap between y=70..80.
+    bright = (arr > 200).all(axis=2)
+    gap_pixels = bright[70:80, :].sum()
+    # With the overlap guard the gap should be essentially empty background.
+    assert gap_pixels < 100
+
+
+def test_rendered_block_height_uses_real_bbox():
+    from PIL import ImageFont
+
+    font = ImageFont.load_default()
+    line_h = _line_height(font)
+    h = _rendered_block_height(["hello"], font, line_h)
+    # The coarse line box is at least as tall as the real bbox height.
+    assert h <= line_h
+    assert h > 0

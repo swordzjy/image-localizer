@@ -90,7 +90,7 @@ pip install google-cloud-vision
 
 ```dotenv
 # 方式一：服务账号 JSON（推荐）
-GOOGLE_APPLICATION_CREDENTIALS=/configs/airecorder-ecc4a-8bd56422b862.json
+GOOGLE_APPLICATION_CREDENTIALS=/configs/your.json
 # 方式二：API Key
 GOOGLE_API_KEY=your-api-key
 ```

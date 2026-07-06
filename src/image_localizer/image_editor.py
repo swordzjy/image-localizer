@@ -419,7 +419,7 @@ def _text_stroke_mask(
     arr: np.ndarray,
     regions: Sequence[tuple[int, int, int, int, tuple[int, int, int]]],
     dist_threshold: int = 38,
-    dilate: int = 1,
+    dilate: int = 3,
 ) -> np.ndarray:
     """Build a mask covering only the original *text strokes*.
 
@@ -501,6 +501,24 @@ def _text_stroke_mask(
 # stays legible and instead wraps once the floor is reached.
 _MIN_FONT_SCALE = 0.6
 _MIN_FONT_SIZE = 10
+_LINE_GAP = 4
+
+
+def _rendered_block_height(
+    lines: Sequence[str], font: ImageFont.FreeTypeFont, line_h: int
+) -> int:
+    """Height of the rendered text block from its first baseline to the last
+    glyph descender, using real font metrics rather than the coarse ascent+descent
+    line box. This avoids overestimating for single-line labels and gives a tight
+    bound for the vertical-overlap guard."""
+    if not lines:
+        return line_h
+    max_bottom = 0
+    for line in lines:
+        bbox = font.getbbox(line)
+        bottom = bbox[3] if bbox else line_h
+        max_bottom = max(max_bottom, bottom)
+    return (len(lines) - 1) * line_h + max_bottom
 
 
 def _bg_span(
@@ -727,7 +745,28 @@ def edit_image(image_path: Path, blocks: Sequence[TextBlock], output_path: Path,
             continue
 
         line_h = _line_height(font)
-        total_h = len(lines_text) * line_h
+        total_h = _rendered_block_height(lines_text, font, line_h)
+
+        # Find the next line's original top edge so a wrapped translation does
+        # not spill downward and overlap it.
+        next_y = img.height
+        for j, (_lb2, _xj, yj, _wj, _hj) in enumerate(lines):
+            if j <= i:
+                continue
+            if yj > y:
+                next_y = min(next_y, yj)
+        available_h = max(1, next_y - y)
+
+        # If the wrapped block is taller than the vertical space to the next
+        # line, shrink the font until it fits (down to the legibility floor).
+        # Leave a small gap so descenders/ascenders of adjacent lines never touch.
+        while total_h + _LINE_GAP > available_h and size > _MIN_FONT_SIZE:
+            scale = max(_MIN_FONT_SIZE / size, available_h / (total_h + _LINE_GAP))
+            size = max(_MIN_FONT_SIZE, int(size * scale))
+            font = _get_font(size, translated)
+            line_h = _line_height(font)
+            lines_text = _wrap_text(translated, font, max_text_width)
+            total_h = _rendered_block_height(lines_text, font, line_h)
 
         # Anchor each line at its ORIGINAL position (top-aligned like the source
         # text). Do not push lines around relative to other lines, which used to
